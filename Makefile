@@ -8,7 +8,7 @@ VENV_PY3=$(VENV_DIR)/bin/python
 VENV_PIP3=$(VENV_DIR)/bin/pip
 
 .PHONY: run
-## Create virtual environment
+## Run project
 run:
 	$(VENV_PY3) src/main.py
 
