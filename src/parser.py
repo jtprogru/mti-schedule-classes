@@ -6,15 +6,13 @@ import requests
 
 import config
 
-DATE_FORMAT = "%d.%m.%y"
+cfg = config.Config()
 
 
 def run(day: str):
-    html_ = __get_html()
+    html_ = __get_html(group_id=103)
     output_json = html_to_json.convert(html_)
-    table = output_json["html"][0]["body"][0]["div"][0]["div"][1]["div"][0]["div"][1][
-        "div"
-    ][0]["div"][1]["div"][0]["table"][0]
+    table = output_json["html"][0]["body"][0]["div"][0]["div"][1]["div"][0]["div"][1]["div"][0]["div"][1]["div"][0]["table"][0]
 
     day_schedule = __get_day_schedule(table["tr"], day)
     # print("=" * 30)
@@ -26,7 +24,7 @@ def run(day: str):
 
 def __get_day_schedule(table: dict, schedule_date: str) -> dict:
     day_schedule = dict()
-    needed_date = datetime.datetime.strptime(schedule_date, DATE_FORMAT)
+    needed_date = datetime.datetime.strptime(schedule_date, cfg.DATE_FORMAT)
     counter = 1
     cursor = 1
     while counter < len(table):
@@ -39,7 +37,7 @@ def __get_day_schedule(table: dict, schedule_date: str) -> dict:
                 table[counter]["td"][0]["span"][0]["_value"]
                 .split(" ")[0]
                 .replace(",", ""),
-                DATE_FORMAT,
+                cfg.DATE_FORMAT,
             )
             if sd == needed_date:
                 teacher_name = __get_teacher_name(table[counter])
@@ -86,6 +84,7 @@ def __get_lectures(td: dict, teacher_name: str) -> dict:
 
 
 def __get_teacher_name(tr: dict) -> str:
+
     try:
         teacher_name = tr["td"][-1]["a"][0]["_value"]
         return str(teacher_name)
@@ -94,9 +93,10 @@ def __get_teacher_name(tr: dict) -> str:
 
 
 def __get_html(group_id: int = 103) -> str:
-    url = config.BASE_URL + config.GROUPS[group_id]["_id"]
-
+    url = cfg.schedule_url + str(cfg.get_group(group_id)["_id"])
     result = requests.get(url)
+
     if result.status_code != 200:
         return ""
+
     return result.text
