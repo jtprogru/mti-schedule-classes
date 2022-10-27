@@ -1,30 +1,41 @@
-import datetime
-from pprint import pprint
-
 import html_to_json
 import requests
 
 import config
+import utils
 
-cfg = config.Config()
 
-
-def run(day: str):
-    html_ = __get_html(group_id=103)
-    output_json = html_to_json.convert(html_)
-    table = output_json["html"][0]["body"][0]["div"][0]["div"][1]["div"][0]["div"][1]["div"][0]["div"][1]["div"][0]["table"][0]
+def run(day: str, group_id: int):
+    output_json = html_to_json.convert(__get_html(group_id=group_id))
+    # ["html"][0]
+    html_ = output_json.get("html")[0]
+    # ["body"][0]
+    body = html_.get("body")[0]
+    # ["div"][0]
+    div0 = body.get("div")[0]
+    # ["div"][1]
+    div1 = div0.get("div")
+    # ["div"][0]
+    div2 = div1[1].get("div")[0]
+    # ["div"][1]
+    div3 = div2.get("div")[1]
+    # ["div"][0]
+    div4 = div3.get("div")[0]
+    # ["div"][1]
+    div5 = div4.get("div")[0]
+    # ["div"][0]
+    div6 = div5.get("div")[1]
+    # ["table"][0]
+    table = div6.get("table")[0]
 
     day_schedule = __get_day_schedule(table["tr"], day)
-    # print("=" * 30)
-    # print(day_schedule)
-    # print("=" * 30)
-    # print(len(day_schedule["classess"]))
-    pprint(day_schedule["classess"])
+
+    return day_schedule
 
 
 def __get_day_schedule(table: dict, schedule_date: str) -> dict:
     day_schedule = dict()
-    needed_date = datetime.datetime.strptime(schedule_date, cfg.DATE_FORMAT)
+    needed_date = utils.get_formatted_date(schedule_date, config.DATE_FORMAT)
     counter = 1
     cursor = 1
     while counter < len(table):
@@ -33,11 +44,9 @@ def __get_day_schedule(table: dict, schedule_date: str) -> dict:
             continue
 
         if len(table[counter]["td"]) == 8:
-            sd = datetime.datetime.strptime(
-                table[counter]["td"][0]["span"][0]["_value"]
-                .split(" ")[0]
-                .replace(",", ""),
-                cfg.DATE_FORMAT,
+            sd = utils.get_formatted_date(
+                table[counter]["td"][0]["span"][0]["_value"].split(" ")[0].replace(",", ""),
+                config.DATE_FORMAT
             )
             if sd == needed_date:
                 teacher_name = __get_teacher_name(table[counter])
@@ -93,7 +102,8 @@ def __get_teacher_name(tr: dict) -> str:
 
 
 def __get_html(group_id: int = 103) -> str:
-    url = cfg.schedule_url + str(cfg.get_group(group_id)["_id"])
+    base_url = 'https://mti.edu.ru/studentam/raspisanie-zanyatij/?view_mode=student&param='
+    url = base_url + str(config.GROUPS[group_id]["_id"])
     result = requests.get(url)
 
     if result.status_code != 200:
